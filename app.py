@@ -43,7 +43,6 @@ response = client.get_object(bucket_name=BUCKET_NAME, object_name=OBJECT_NAME)
 # Read into pandas DataFrame
 df = pd.read_csv(BytesIO(response.read()))
 
-
 #df=pd.read_csv(r"C:\Users\Arnab Basak\Downloads\weather_csv_2022_25.csv")
 
 df['date']=pd.to_datetime(df['date'])
@@ -96,7 +95,9 @@ app.layout = dbc.Container(
     [
         heading,
         dbc.Row([
-            dbc.Col([control_panel],md=2),
+            dbc.Col([control_panel,
+                     dbc.Row([dbc.Col(html.Div(id="average-stats-card"), width=12)], className="mb-3"),
+                    ],md=2),
             dbc.Col(
                 [
                     dcc.Markdown(id="title"),
@@ -154,8 +155,8 @@ def update_heatmap_plot(selected_year, selected_month):
             week_c = week_c+1
         else:
             weekday = weekday+1
-    print(monthly_temp)
-    print(dates)
+    #print(monthly_temp)
+    #print(dates)
     heatmap = px.imshow(
     monthly_temp,
     labels=dict(x="Week Day", y="Week Number", color="Temperature"),
@@ -224,6 +225,7 @@ def update_heatmap_plot(selected_year, selected_month):
 @app.callback(
     Output('highest-temp-card', 'children'),
     Output('highest-rain-card', 'children'),
+    Output('average-stats-card', 'children'),
     [Input('year-dropdown', 'value'),
      Input('month-dropdown', 'value')]
 )
@@ -234,23 +236,50 @@ def update_cards(selected_year, selected_month):
     max_temp_day= monthly_df.loc[monthly_df['temperature_2m'] == max_temp, 'date'].dt.strftime('%d %b %Y').values[0]
     max_rain=monthly_df['rain'].max()
     max_rain_day= monthly_df.loc[monthly_df['temperature_2m'] == max_temp, 'date'].dt.strftime('%d %b %Y').values[0]
+    avg_rain=monthly_df['rain'].mean()
+    avg_temp=monthly_df['temperature_2m'].mean()
+    avg_humidity=monthly_df['relative_humidity_2m'].mean()
+    avg_windspeed=monthly_df['wind_speed_10m'].mean()
+    
 
 
     max_temp_card =  dbc.Card([
         dbc.CardHeader(html.H2("Monthly Max Temp"), className="text-center"),
         dbc.CardBody([
-            html.H4(f"{max_temp:.1f}°C"),
+            html.H4(f"{max_temp:.2f}°C"),
             html.Small(f"on {max_temp_day}")
         ])
     ])
     max_rain_card =  dbc.Card([
         dbc.CardHeader(html.H2("Monthly Max Rain"), className="text-center"),
         dbc.CardBody([
-            html.H4(f"{max_rain:.1f} mm"),
+            html.H4(f"{max_rain:.2f} mm"),
             html.Small(f"on {max_rain_day}")
         ])
     ])
-    return max_temp_card,max_rain_card
+
+    avg_card =  dbc.Card([
+        dbc.CardHeader(html.H2("Average Monthy Measures"), className="text-center"),
+        dbc.CardBody([
+                    html.H4(["Average Rain: ",
+                    html.Span(f"{avg_rain:.2f} mm", style={"fontWeight": "normal"})]),
+                    html.H4([
+                        "Average Temp: ",
+                        html.Span(f"{avg_temp:.2f} °C", style={"fontWeight": "normal"})
+                    ]),
+                    html.H4([
+                        "Average Humidity: ",
+                        html.Span(f"{avg_humidity:.2f} %", style={"fontWeight": "normal"})
+                    ]),
+                    html.H4([
+                        "Average Windspeed: ",
+                        html.Span(f"{avg_windspeed:.2f} m/s", style={"fontWeight": "normal"})
+                    ]),
+
+                ])
+            ])
+
+    return max_temp_card,max_rain_card,avg_card
 
 
 if __name__ == '__main__':
